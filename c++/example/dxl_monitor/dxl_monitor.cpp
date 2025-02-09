@@ -49,6 +49,8 @@
 #define DEVICENAME                      "/dev/ttyUSB0"      // Check which port is being used on your controller
                                                             // ex) Windows: "COM1"   Linux: "/dev/ttyUSB0" Mac: "/dev/tty.usbserial-*"
 
+#define BAUDRATE 1000000
+
 int getch()
 {
 #if defined(__linux__) || defined(__APPLE__)
@@ -97,7 +99,7 @@ int kbhit(void)
 #endif
 }
 
-void usage(char *progname)
+void usage(char* progname)
 {
   printf("-----------------------------------------------------------------------\n");
   printf("Usage: %s\n", progname);
@@ -150,36 +152,15 @@ void help()
   printf("\n");
 }
 
-void scan(dynamixel::PortHandler *portHandler, dynamixel::PacketHandler *packetHandler1, dynamixel::PacketHandler *packetHandler2)
+void scan(dynamixel::PortHandler* portHandler, dynamixel::PacketHandler* packetHandler1, dynamixel::PacketHandler* packetHandler2)
 {
   uint8_t dxl_error;
   uint16_t dxl_model_num;
 
-  fprintf(stderr, "\n");
-  fprintf(stderr, "Scan Dynamixel Using Protocol 1.0\n");
-  for (int id = 1; id < 253; id++)
-  {
-    if (packetHandler1-> ping(portHandler, id, &dxl_model_num, &dxl_error)== COMM_SUCCESS)
-    {
-      fprintf(stderr, "\n                                          ... SUCCESS \r");
-      fprintf(stderr, " [ID:%.3d] Model No : %.5d \n", id, dxl_model_num);
-    }
-    else
-        fprintf(stderr, ".");
-
-    if (kbhit())
-    {
-        char c = getch();
-        if (c == 0x1b)
-        break;
-    }
-  }
-  fprintf(stderr, "\n\n");
-
   fprintf(stderr, "Scan Dynamixel Using Protocol 2.0\n");
   for (int id = 1; id < 253; id++)
   {
-    if (packetHandler2-> ping(portHandler, id, &dxl_model_num, &dxl_error)== COMM_SUCCESS)
+    if (packetHandler2->ping(portHandler, id, &dxl_model_num, &dxl_error) == COMM_SUCCESS)
     {
       fprintf(stderr, "\n                                          ... SUCCESS \r");
       fprintf(stderr, " [ID:%.3d] Model No : %.5d \n", id, dxl_model_num);
@@ -198,7 +179,7 @@ void scan(dynamixel::PortHandler *portHandler, dynamixel::PacketHandler *packetH
   fprintf(stderr, "\n\n");
 }
 
-void write(dynamixel::PortHandler *portHandler, dynamixel::PacketHandler *packetHandler, uint8_t id, uint16_t addr, uint16_t length, uint32_t value)
+void write(dynamixel::PortHandler* portHandler, dynamixel::PacketHandler* packetHandler, uint8_t id, uint16_t addr, uint16_t length, uint32_t value)
 {
   uint8_t dxl_error = 0;
   int dxl_comm_result = COMM_TX_FAIL;
@@ -228,14 +209,14 @@ void write(dynamixel::PortHandler *portHandler, dynamixel::PacketHandler *packet
   }
 }
 
-void read(dynamixel::PortHandler *portHandler, dynamixel::PacketHandler *packetHandler, uint8_t id, uint16_t addr, uint16_t length)
+void read(dynamixel::PortHandler* portHandler, dynamixel::PacketHandler* packetHandler, uint8_t id, uint16_t addr, uint16_t length)
 {
   uint8_t dxl_error = 0;
   int     dxl_comm_result = COMM_TX_FAIL;
 
-  int8_t  value8    = 0;
-  int16_t value16   = 0;
-  int32_t value32   = 0;
+  int8_t  value8 = 0;
+  int16_t value16 = 0;
+  int32_t value32 = 0;
 
 
   if (length == 1)
@@ -275,11 +256,11 @@ void read(dynamixel::PortHandler *portHandler, dynamixel::PacketHandler *packetH
   }
 }
 
-void dump(dynamixel::PortHandler *portHandler, dynamixel::PacketHandler *packetHandler, uint8_t id, uint16_t addr, uint16_t len)
+void dump(dynamixel::PortHandler* portHandler, dynamixel::PacketHandler* packetHandler, uint8_t id, uint16_t addr, uint16_t len)
 {
-  uint8_t  dxl_error       = 0;
+  uint8_t  dxl_error = 0;
   int      dxl_comm_result = COMM_TX_FAIL;
-  uint8_t *data            = (uint8_t*)calloc(len, sizeof(uint8_t));
+  uint8_t* data = (uint8_t*)calloc(len, sizeof(uint8_t));
 
   dxl_comm_result = packetHandler->readTxRx(portHandler, id, addr, len, data, &dxl_error);
   if (dxl_comm_result == COMM_SUCCESS)
@@ -290,8 +271,8 @@ void dump(dynamixel::PortHandler *portHandler, dynamixel::PacketHandler *packetH
     if (id != BROADCAST_ID)
     {
       fprintf(stderr, "\n");
-      for (int i = addr; i < addr+len; i++)
-      fprintf(stderr, "ADDR %.3d [0x%.4X] :     %.3d [0x%.2X] \n", i, i, data[i-addr], data[i-addr]);
+      for (int i = addr; i < addr + len; i++)
+        fprintf(stderr, "ADDR %.3d [0x%.4X] :     %.3d [0x%.2X] \n", i, i, data[i - addr], data[i - addr]);
       fprintf(stderr, "\n");
     }
   }
@@ -304,23 +285,23 @@ void dump(dynamixel::PortHandler *portHandler, dynamixel::PacketHandler *packetH
   free(data);
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
   // Initialize Packethandler1 instance
-  dynamixel::PacketHandler *packetHandler1 = dynamixel::PacketHandler::getPacketHandler(PROTOCOL_VERSION1);
+  dynamixel::PacketHandler* packetHandler1 = dynamixel::PacketHandler::getPacketHandler(PROTOCOL_VERSION1);
 
   // Initialize Packethandler2 instance
-  dynamixel::PacketHandler *packetHandler2 = dynamixel::PacketHandler::getPacketHandler(PROTOCOL_VERSION2);
+  dynamixel::PacketHandler* packetHandler2 = dynamixel::PacketHandler::getPacketHandler(PROTOCOL_VERSION2);
 
   fprintf(stderr, "\n***********************************************************************\n");
-  fprintf(stderr,   "*                            DXL Monitor                              *\n");
-  fprintf(stderr,   "***********************************************************************\n\n");
+  fprintf(stderr, "*                            DXL Monitor                              *\n");
+  fprintf(stderr, "***********************************************************************\n\n");
 
-  char *dev_name = (char*)DEVICENAME;
+  char* dev_name = (char*)DEVICENAME;
 
 #if defined(__linux__) || defined(__APPLE__)
   // parameter parsing
-  while(1)
+  while (1)
   {
     int option_index = 0, c = 0;
     static struct option long_options[] = {
@@ -344,15 +325,15 @@ int main(int argc, char *argv[])
     }
 
     // dispatch the given options
-    switch(option_index) {
-    // h, help
+    switch (option_index) {
+      // h, help
     case 0:
     case 1:
       usage(argv[0]);
       return 0;
       break;
 
-    // d, device
+      // d, device
     case 2:
     case 3:
       if (strlen(optarg) == 1)
@@ -375,11 +356,12 @@ int main(int argc, char *argv[])
   // Initialize PortHandler instance
   // Set the port path
   // Get methods and members of PortHandlerLinux or PortHandlerWindows
-  dynamixel::PortHandler *portHandler = dynamixel::PortHandler::getPortHandler(dev_name);
+  dynamixel::PortHandler* portHandler = dynamixel::PortHandler::getPortHandler(dev_name);
 
   // Open port
   if (portHandler->openPort())
   {
+    if (portHandler->setBaudRate(BAUDRATE) == false) fprintf(stderr, " Failed to change baudrate! \n");
     printf("Succeeded to open the port!\n\n");
     printf(" - Device Name : %s\n", dev_name);
     printf(" - Baudrate    : %d\n\n", portHandler->getBaudRate());
@@ -396,15 +378,15 @@ int main(int argc, char *argv[])
   char    cmd[80];
   char    param[20][30];
   int     num_param;
-  char    *token;
+  char* token;
   uint8_t dxl_error;
 
-  while(1)
+  while (1)
   {
     printf("[CMD] ");
     fgets(input, sizeof(input), stdin);
-    char *p;
-    if ((p = strchr(input, '\n'))!= NULL) *p = '\0';
+    char* p;
+    if ((p = strchr(input, '\n')) != NULL) *p = '\0';
     fflush(stdin);
 
     if (strlen(input) == 0) continue;
@@ -416,7 +398,7 @@ int main(int argc, char *argv[])
     strcpy(cmd, token);
     token = strtok(0, " ");
     num_param = 0;
-    while(token != 0)
+    while (token != 0)
     {
       strcpy(param[num_param++], token);
       token = strtok(0, " ");
@@ -631,8 +613,9 @@ int main(int argc, char *argv[])
       {
         dump(portHandler, packetHandler1, atoi(param[0]), atoi(param[1]), atoi(param[2]));
       }
-      else{
-        fprintf(stderr, " Invalid parameters! \n");}
+      else {
+        fprintf(stderr, " Invalid parameters! \n");
+      }
     }
     else if (strcmp(cmd, "r2") == 0)
     {
@@ -663,7 +646,7 @@ int main(int argc, char *argv[])
       }
       else
       {
-          fprintf(stderr, " Invalid parameters! \n");
+        fprintf(stderr, " Invalid parameters! \n");
       }
     }
     else if (strcmp(cmd, "reset1") == 0 || strcmp(cmd, "rst1") == 0)
